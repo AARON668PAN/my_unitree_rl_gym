@@ -7,22 +7,35 @@ class G1RoughCfg( LeggedRobotCfg ):
            'left_hip_yaw_joint' : 0. ,   
            'left_hip_roll_joint' : 0,               
            'left_hip_pitch_joint' : -0.1,         
-           'left_knee_joint' : 0.3,       
-           'left_ankle_pitch_joint' : -0.2,     
+           'left_knee_joint' : 0.3,           
            'left_ankle_roll_joint' : 0,     
            'right_hip_yaw_joint' : 0., 
            'right_hip_roll_joint' : 0, 
            'right_hip_pitch_joint' : -0.1,                                       
-           'right_knee_joint' : 0.3,                                             
-           'right_ankle_pitch_joint': -0.2,                              
+           'right_knee_joint' : 0.3,                                                                       
            'right_ankle_roll_joint' : 0,       
-           'torso_joint' : 0.
+        #    'torso_joint' : 0.,
+           'left_shoulder_pitch_joint' : 0., 
+           'left_shoulder_roll_joint' : 0, 
+           'left_shoulder_yaw_joint' : 0.,
+           'right_shoulder_pitch_joint' : 0.,
+           'right_shoulder_roll_joint' : 0.0,
+           'right_shoulder_yaw_joint' : 0.,
+           'left_elbow_joint'  : 0.,
+           'right_elbow_joint' : 0.,
         }
+
     
     class env(LeggedRobotCfg.env):
-        num_observations = 47
-        num_privileged_obs = 50
-        num_actions = 12
+        num_observations = 65 
+        num_privileged_obs = 68
+        num_actions = 18
+
+
+
+    
+
+
 
 
     class domain_rand(LeggedRobotCfg.domain_rand):
@@ -44,12 +57,17 @@ class G1RoughCfg( LeggedRobotCfg ):
                      'hip_pitch': 100,
                      'knee': 150,
                      'ankle': 40,
+                     'shoulder': 100,
+                     'elbow': 40
+
                      }  # [N*m/rad]
         damping = {  'hip_yaw': 2,
                      'hip_roll': 2,
                      'hip_pitch': 2,
                      'knee': 4,
                      'ankle': 2,
+                     'shoulder': 2,
+                     'elbow': 2
                      }  # [N*m/rad]  # [N*m*s/rad]
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 0.25
@@ -57,7 +75,7 @@ class G1RoughCfg( LeggedRobotCfg ):
         decimation = 4
 
     class asset( LeggedRobotCfg.asset ):
-        file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/g1_description/g1_12dof.urdf'
+        file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/g1_description/g1_18dof.urdf'
         name = "g1"
         foot_name = "ankle_roll"
         penalize_contacts_on = ["hip", "knee"]
@@ -87,24 +105,27 @@ class G1RoughCfg( LeggedRobotCfg ):
             contact_no_vel = -0.2
             feet_swing_height = -20.0
             contact = 0.18
+            dof_error = -0.1
 
-class G1RoughCfgPPO( LeggedRobotCfgPPO ):
+class G1RoughCfgPPO(LeggedRobotCfgPPO):
+
+    # ----- 神经网络结构（前馈 MLP）-----
     class policy:
-        init_noise_std = 0.8
-        actor_hidden_dims = [32]
-        critic_hidden_dims = [32]
-        activation = 'elu' # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
-        # only for 'ActorCriticRecurrent':
-        rnn_type = 'lstm'
-        rnn_hidden_size = 64
-        rnn_num_layers = 1
-        
-    class algorithm( LeggedRobotCfgPPO.algorithm ):
+        init_noise_std     = 0.8
+        actor_hidden_dims  = [64, 64]     # 两层 MLP
+        critic_hidden_dims = [64, 64]
+        activation         = 'elu'        # elu / relu / selu / tanh ...
+
+    # ----- PPO 算法超参数 -----
+    class algorithm(LeggedRobotCfgPPO.algorithm):
         entropy_coef = 0.01
-    class runner( LeggedRobotCfgPPO.runner ):
-        policy_class_name = "ActorCriticRecurrent"
-        max_iterations = 10000
-        run_name = ''
-        experiment_name = 'g1'
+
+    # ----- 训练 Runner 设置 -----
+    class runner(LeggedRobotCfgPPO.runner):
+        policy_class_name  = 'ActorCritic'   # **不用 LSTM**
+        max_iterations     = 10000
+        num_steps_per_env  = 24              # rollout 长度，可适当调小省显存
+        experiment_name    = 'g1'
+        run_name           = ''
 
   

@@ -11,6 +11,11 @@ class LeggedRobotCfg(BaseConfig):
         episode_length_s = 20 # episode length in seconds
         test = False
 
+        contact_buf_len = 100
+
+
+
+
     class terrain:
         mesh_type = 'plane' # "heightfield" # none, plane, heightfield or trimesh
         horizontal_scale = 0.1 # [m]
