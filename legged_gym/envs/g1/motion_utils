@@ -1,0 +1,41 @@
+import torch 
+import numpy as np
+
+def compute_motion_length(num_frames: int, fps: float) -> float:
+    return (num_frames - 1) / fps
+
+def find_time_frame(time: torch.Tensor, length: float, num_frames: int) -> torch.Tensor:
+    """
+    Given time(s), return the corresponding frame index (without interpolation).
+    """
+    phase = time / length
+    phase = torch.clip(phase, 0.0, 1.0)
+    frame_idx0 = (phase * (num_frames - 1)).long()
+    return frame_idx0
+
+def get_motion(motion_data: torch.Tensor, time: torch.Tensor, fps: float) -> torch.Tensor:
+    """
+    Fetch the dof data at the given time(s) from motion_data.
+
+    Args:
+        motion_data: Tensor of shape [N, num_joints]
+        time: Tensor of shape [T] or float, times in seconds
+        fps: Frame rate of the motion
+
+    Returns:
+        Tensor of shape [T, num_joints]: DOF data at each requested time
+    """
+    if isinstance(time, float) or isinstance(time, int):
+        time = torch.tensor([time], dtype=torch.float32, device=motion_data.device)
+    num_frames = motion_data.shape[0]
+    motion_len = compute_motion_length(num_frames, fps)
+    frame_idx = find_time_frame(time, motion_len, num_frames)
+    return motion_data[frame_idx]
+
+
+file_path = '/home/yan/unitree_rl_gym/legged_gym/envs/g1/dof_data/dof_map.npy'
+dof_map = torch.from_numpy(np.load(file_path))
+motion = get_motion(dof_map,30,30)
+
+
+

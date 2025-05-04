@@ -125,3 +125,12 @@ class G1Robot(LeggedRobot):
     def _reward_dof_error(self):
         dof_error = torch.sum(torch.square(self.dof_pos - self.default_dof_pos)[:, :11], dim=1)
         return dof_error
+    
+    def _reward_tracking_demo_dof_pos(self):
+        demo_dofs = self._curr_demo_obs_buf[:, :self._n_demo_dof]
+        dof_pos = self.dof_pos[:, self._dof_ids_subset]
+        rew = torch.exp(-0.7 * torch.norm((dof_pos - demo_dofs), dim=1))
+        # print(rew[self.lookat_id].cpu().numpy())
+        # print("dof_pos", dof_pos)
+        # print("demo_dofs", demo_dofs)
+        return rew
